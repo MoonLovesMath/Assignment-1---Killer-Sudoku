@@ -4,8 +4,8 @@ test_solvers.py — Verify all solvers produce correct solutions.
 Test cases:
     4x4   — artificial puzzle, known unique solution, exact check
     9x9   — real generated puzzle (40 cages, sizes 1–3), validity check
-    16x16 — real puzzle #1622, grid structure verified (not solved —
-             neither backtracker nor DLX are fast enough on real 16x16 cages)
+    16x16 — real puzzle #1622 (135 cages), solved with backtracker only
+             naive and dlx skipped — naive too slow, dlx cage-sum check too expensive
 """
 
 import sys, os
@@ -272,13 +272,17 @@ def main():
     def exact_4(grid, label): assert_exact(grid, SOLUTION_4, label)
 
     solver_tests = [
-        # label                  input    solver            check        skip
-        ("4x4   | naive",     INPUT_4, solver_naive,     exact_4,      False),
-        ("4x4   | backtrack", INPUT_4, solver_backtrack, exact_4,      False),
-        ("4x4   | dlx",       INPUT_4, solver_dlx,       exact_4,      False),
-        ("9x9   | naive",     INPUT_9, solver_naive,     assert_valid, False),
-        ("9x9   | backtrack", INPUT_9, solver_backtrack, assert_valid, False),
-        ("9x9   | dlx",       INPUT_9, solver_dlx,       assert_valid, False),
+        # label                  input     solver            check         skip
+        ("4x4   | naive",     INPUT_4,  solver_naive,     exact_4,      False),
+        ("4x4   | backtrack", INPUT_4,  solver_backtrack, exact_4,      False),
+        ("4x4   | dlx",       INPUT_4,  solver_dlx,       exact_4,      False),
+        ("9x9   | naive",     INPUT_9,  solver_naive,     assert_valid, False),
+        ("9x9   | backtrack", INPUT_9,  solver_backtrack, assert_valid, False),
+        ("9x9   | dlx",       INPUT_9,  solver_dlx,       assert_valid, False),
+        # 16x16: naive skipped (too slow), dlx skipped (cage-sum check too expensive at this scale)
+        ("16x16 | naive",     INPUT_16, solver_naive,     assert_valid, True),
+        ("16x16 | backtrack", INPUT_16, solver_backtrack, assert_valid, False),
+        ("16x16 | dlx",       INPUT_16, solver_dlx,       assert_valid, True),
     ]
 
     passed = failed = skipped = 0
@@ -302,17 +306,6 @@ def main():
         except Exception as e:
             print(f"  ✗ ERROR: {type(e).__name__}: {e}")
             failed += 1
-
-    # 16x16 — parse and validate only
-    try:
-        result = run_parse_only("16x16 | parse only (puzzle #1622)", INPUT_16)
-        passed += 1
-    except AssertionError as e:
-        print(f"  ✗ FAILED: {e}")
-        failed += 1
-    except Exception as e:
-        print(f"  ✗ ERROR: {type(e).__name__}: {e}")
-        failed += 1
 
     print(f"\n{'='*55}")
     print(f"Results: {passed} passed, {failed} failed, {skipped} skipped")
